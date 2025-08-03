@@ -8,10 +8,14 @@
 #include <algorithm>
 #include <vsol/vsol_line_2d.h>
 #include <vul/vul_file.h>
+#include <bdifd/algo/bdifd_algo_config.h>
+
+#ifdef HAS_BOOST
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_on_sphere.hpp>
 #include <boost/random/normal_distribution.hpp>
+#endif
 
 void bdifd_data::
 max_err_reproj_perturb(
@@ -1836,6 +1840,7 @@ cameras_olympus_spherical(
   bool enforce_minimum_separation,
   bool perturb)
 {
+#ifdef HAS_BOOST
   typedef boost::random::mt19937 gen_type;
   std::vector<vpgl_perspective_camera<double> > &cams = *pcams;
   unsigned nviews=100;
@@ -1877,10 +1882,10 @@ cameras_olympus_spherical(
       bdifd_vector_3d z(-r[0],-r[1],-r[2]);
       
       if (perturb) {
-        std::cout << "z before " << z << std::endl;
+        //std::cout << "z before " << z << std::endl;
         z += bdifd_vector_3d(0.01*random01(),0.01*random01(),0.01*random01());
         z.normalize(); 
-        std::cout << "z after " << z << std::endl;
+        //std::cout << "z after " << z << std::endl;
       }
       
       if (enforce_minimum_separation) {
@@ -1947,10 +1952,14 @@ cameras_olympus_spherical(
       R[2][2] = z[2];
       
       vgl_h_matrix_3d<double> Rhmg(R,bdifd_vector_3d(0,0,0));
-      assert(Rhmg.is_euclidean());
+      assert(Rhmg.is_euclidean(1e-10));
       cams.push_back(vpgl_perspective_camera<double>(K, C, vgl_rotation_3d<double>(Rhmg)));
       ++i;
   } while (i < nviews);
+#else
+  std::cerr << "No boost has found, compiled into a stub\n";
+  abort();
+#endif
 }
 
 //: convert from std::vector<bdifd_3rd_order_point_2d> 
